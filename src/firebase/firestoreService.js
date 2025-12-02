@@ -4,10 +4,12 @@ import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } f
 
 // Collections
 const COLLECTIONS = {
-  CONTACT_MESSAGES: 'contactMessages',
-  QUOTE_REQUESTS: 'quoteRequests',
+  CONTACT_MESSAGES: 'eco4contactMessages',
+  QUOTE_REQUESTS: 'eco4quoteRequests',
   GRANT_APPLICATIONS: 'grantApplications',
-  NEWSLETTER_SUBSCRIBERS: 'newsletterSubscribers'
+  SERVICES: 'services',
+  LEADS: 'leads',
+  NEWSLETTER_SUBSCRIBERS: 'eco4newsletterSubscribers'
 };
 
 // Helper function to save to Firestore
@@ -102,6 +104,83 @@ export const saveGrantApplication = async (formData, grantType) => {
     return result;
   } catch (error) {
     console.error('Error saving grant application:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Services fetching helper (for eligibility / widgets etc.)
+export const getServices = async () => {
+  try {
+    const querySnapshot = await getDocs(collection(db, COLLECTIONS.SERVICES));
+    const services = [];
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      services.push({
+        id: doc.id,
+        name: data.name,
+        price: data.price,
+        ...data
+      });
+    });
+
+    return { success: true, services };
+  } catch (error) {
+    console.error('Error fetching services from Firestore:', error);
+    return { success: false, error: error.message, services: [] };
+  }
+};
+
+// Lead / Eligibility Form Service
+export const saveLead = async (leadData) => {
+  try {
+    const {
+      name,
+      email,
+      phone,
+      address,
+      certificateType = 'Boiler Service',
+      additionalDetails = '',
+      selectedServices = [],
+      estimatedValue,
+      priority = 'Medium',
+      urgency = 'Normal',
+      source = 'Website Widget'
+    } = leadData;
+
+    // If estimatedValue not provided, derive it from selected services prices
+    const derivedEstimatedValue =
+      typeof estimatedValue === 'number'
+        ? estimatedValue
+        : selectedServices.reduce(
+            (total, svc) => total + (Number(svc.price) || 0),
+            0
+          );
+
+    const payload = {
+      name,
+      email,
+      phone,
+      address,
+      certificateType,
+      additionalDetails,
+      selectedServices,
+      estimatedValue: derivedEstimatedValue,
+      converted: false,
+      priority,
+      urgency,
+      status: 'New',
+      source,
+      formType: 'lead'
+    };
+
+    const result = await saveToFirestore(COLLECTIONS.LEADS, payload);
+
+    console.log('Lead saved:', payload);
+
+    return result;
+  } catch (error) {
+    console.error('Error saving lead:', error);
     return { success: false, error: error.message };
   }
 };

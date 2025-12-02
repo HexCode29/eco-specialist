@@ -5,12 +5,12 @@ import { getAnalytics } from 'firebase/analytics';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDfCABtQZU9kA6d5bU9DWDv09pBC7atOsE",
-  authDomain: "eco-specialist-website.firebaseapp.com",
-  projectId: "eco-specialist-website",
-  storageBucket: "eco-specialist-website.firebasestorage.app",
-  messagingSenderId: "1033075365211",
-  appId: "1:1033075365211:web:dc571218597baa92b4f67e"
+  apiKey: "AIzaSyCZDSa2WNfPoM5KZT-qZnkgcLETrlcRYng",
+  authDomain: "emsystem-1.firebaseapp.com",
+  projectId: "emsystem-1",
+  storageBucket: "emsystem-1.firebasestorage.app",
+  messagingSenderId: "1064596121266",
+  appId: "1:1064596121266:web:fd92cefd54402247700bab"
 };
 
 // Initialize Firebase

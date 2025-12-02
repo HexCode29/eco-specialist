@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Phone, Users, Award, TrendingUp, Sun, Wind, Leaf, Calculator, Wrench, Home as HomeIcon, Zap, Thermometer, ShieldCheck, Smile, Briefcase, CheckCircle } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-import { saveGrantApplication } from '@/firebase/firestoreService';
+import { saveGrantApplication, saveLead, getServices } from '@/firebase/firestoreService';
 
 const Home = () => {
 
@@ -72,14 +72,57 @@ const Home = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
+    const [addressLine1, setAddressLine1] = useState('');
+    const [city, setCity] = useState('');
+    const [services, setServices] = useState([]);
+    const [selectedServices, setSelectedServices] = useState([]);
+
+    useEffect(() => {
+      const fetchServices = async () => {
+        const result = await getServices();
+        if (result.success) {
+          // Only keep the services you want to show (the green ones)
+          const allowedNames = [
+            'Boiler Service',
+            'Solid Fuel',
+            'Storage Heaters',
+            'Electric',
+            'Heat Pump',
+            'Oil/LPG',
+            'Oil / LPG'
+          ];
+
+          const filtered = result.services.filter((svc) =>
+            allowedNames.includes(svc.name)
+          );
+
+          setServices(filtered);
+        } else {
+          console.error('Failed to load services for eligibility form:', result.error);
+        }
+      };
+
+      fetchServices();
+    }, []);
 
     const canNextFrom1 = postcode.trim().length >= 4;
     const canNextFrom2 = ownership !== '' && heating !== '' && bedrooms !== '';
     const canNextFrom3 = propertyType !== '' && boilerAge !== '' && epc !== '';
 
+    const toggleServiceSelection = (service) => {
+      setSelectedServices((prev) => {
+        const exists = prev.find((s) => s.id === service.id);
+        if (exists) {
+          return prev.filter((s) => s.id !== service.id);
+        }
+        return [...prev, { id: service.id, name: service.name, price: service.price }];
+      });
+    };
+
     const handleSubmit = async () => {
+      const address = [addressLine1, city, postcode].filter(Boolean).join(', ');
+
       const payload = {
-        formType: 'home_stepper',
         postcode,
         ownership,
         currentHeating: heating,
@@ -90,13 +133,28 @@ const Home = () => {
         name,
         email,
         phone,
+        address,
+        selectedServices,
         source: 'home_apply_section'
       };
-      const result = await saveGrantApplication(payload, 'home_inline');
+
+      const result = await saveLead(payload);
       if (result.success) {
         toast({ title: '✅ Submitted', description: 'Thanks! We will contact you within 24 hours.' });
         setStep(1);
-        setPostcode(''); setOwnership(''); setHeating(''); setPropertyType(''); setBedrooms(''); setBoilerAge(''); setEpc(''); setName(''); setEmail(''); setPhone('');
+        setPostcode('');
+        setOwnership('');
+        setHeating('');
+        setPropertyType('');
+        setBedrooms('');
+        setBoilerAge('');
+        setEpc('');
+        setName('');
+        setEmail('');
+        setPhone('');
+        setAddressLine1('');
+        setCity('');
+        setSelectedServices([]);
       } else {
         toast({ title: '❌ Submission failed', description: 'Please try again in a moment.' });
       }
@@ -212,6 +270,31 @@ const Home = () => {
                   </div>
                 </div>
               </div>
+              {services.length > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+                  <label className="block text-sm font-semibold text-gray-800 mb-3">Which services are you interested in?</label>
+                  <div className="grid md:grid-cols-3 gap-2">
+                    {services.map((service) => {
+                      const isSelected = !!selectedServices.find((s) => s.id === service.id);
+                      return (
+                        <button
+                          key={service.id}
+                          type="button"
+                          onClick={() => toggleServiceSelection(service)}
+                          className={`w-full px-4 py-3 rounded-xl border text-sm md:text-base ${
+                            isSelected ? 'bg-[#248E3D] text-white border-[#248E3D]' : 'border-gray-300 hover:border-[#248E3D]'
+                          }`}
+                        >
+                          <span className="block">{service.name}</span>
+                          {typeof service.price !== 'undefined' && (
+                            <span className="block text-xs opacity-80">£{service.price}</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex justify-between max-w-2xl mx-auto mt-6">
               <button onClick={() => setStep(2)} className="px-6 py-3 rounded-xl bg-gray-200 text-gray-800">Back</button>
@@ -239,11 +322,21 @@ const Home = () => {
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-800 mb-2">Address line 1</label>
-                <input placeholder="Street address" className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#248E3D]" />
+                <input
+                  placeholder="Street address"
+                  value={addressLine1}
+                  onChange={(e) => setAddressLine1(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#248E3D]"
+                />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 mb-2">City</label>
-                <input placeholder="City" className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#248E3D]" />
+                <input
+                  placeholder="City"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#248E3D]"
+                />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-800 mb-2">Postcode</label>
