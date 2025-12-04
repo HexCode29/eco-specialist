@@ -135,17 +135,14 @@ export const getServices = async () => {
 export const saveLead = async (leadData) => {
   try {
     const {
-      name,
-      email,
-      phone,
-      address,
       certificateType = 'Boiler Service',
       additionalDetails = '',
       selectedServices = [],
       estimatedValue,
       priority = 'Medium',
       urgency = 'Normal',
-      source = 'Website Widget'
+      source = 'Website Widget',
+      ...rest // keep all other fields from the form (postcode, ownership, etc.)
     } = leadData;
 
     // If estimatedValue not provided, derive it from selected services prices
@@ -158,10 +155,7 @@ export const saveLead = async (leadData) => {
           );
 
     const payload = {
-      name,
-      email,
-      phone,
-      address,
+      ...rest, // includes postcode, ownership, currentHeating, bedrooms, EPC, benefits, etc.
       certificateType,
       additionalDetails,
       selectedServices,

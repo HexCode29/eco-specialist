@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Phone, Users, Award, TrendingUp, Sun, Wind, Leaf, Calculator, Wrench, Home as HomeIcon, Zap, Thermometer, ShieldCheck, Smile, Briefcase, CheckCircle } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-import { saveGrantApplication, saveLead, getServices } from '@/firebase/firestoreService';
+import { saveLead, getServices } from '@/firebase/firestoreService';
 
 const Home = () => {
 
@@ -74,49 +74,58 @@ const Home = () => {
     const [phone, setPhone] = useState('');
     const [addressLine1, setAddressLine1] = useState('');
     const [city, setCity] = useState('');
-    const [services, setServices] = useState([]);
+    const [heatingOptions, setHeatingOptions] = useState([]);
     const [selectedServices, setSelectedServices] = useState([]);
+    const [onBenefits, setOnBenefits] = useState('');
+    const [benefitType, setBenefitType] = useState('');
 
     useEffect(() => {
-      const fetchServices = async () => {
+      const fetchHeatingOptions = async () => {
         const result = await getServices();
         if (result.success) {
-          // Only keep the services you want to show (the green ones)
           const allowedNames = [
-            'Boiler Service',
+            'Gas Boiler',
+            'Electric',
+            'Oil / LPG',
+            'Oil/LPG',
+            'Heat Pump',
             'Solid Fuel',
             'Storage Heaters',
-            'Electric',
-            'Heat Pump',
-            'Oil/LPG',
-            'Oil / LPG'
+            'Boiler Service'
           ];
 
           const filtered = result.services.filter((svc) =>
             allowedNames.includes(svc.name)
           );
 
-          setServices(filtered);
+          setHeatingOptions(filtered);
         } else {
-          console.error('Failed to load services for eligibility form:', result.error);
+          console.error('Failed to load heating services for eligibility form:', result.error);
         }
       };
 
-      fetchServices();
+      fetchHeatingOptions();
     }, []);
 
     const canNextFrom1 = postcode.trim().length >= 4;
-    const canNextFrom2 = ownership !== '' && heating !== '' && bedrooms !== '';
+    const canNextFrom2 =
+      ownership !== '' &&
+      heating !== '' &&
+      bedrooms !== '' &&
+      onBenefits !== '' &&
+      (onBenefits === 'No' || benefitType !== '');
     const canNextFrom3 = propertyType !== '' && boilerAge !== '' && epc !== '';
 
-    const toggleServiceSelection = (service) => {
-      setSelectedServices((prev) => {
-        const exists = prev.find((s) => s.id === service.id);
-        if (exists) {
-          return prev.filter((s) => s.id !== service.id);
+    const handleSelectHeating = (serviceLike) => {
+      // serviceLike may be a Firestore service or a simple fallback object
+      setHeating(serviceLike.name);
+      setSelectedServices([
+        {
+          id: serviceLike.id || serviceLike.name,
+          name: serviceLike.name,
+          price: serviceLike.price
         }
-        return [...prev, { id: service.id, name: service.name, price: service.price }];
-      });
+      ]);
     };
 
     const handleSubmit = async () => {
@@ -134,6 +143,8 @@ const Home = () => {
         email,
         phone,
         address,
+        onBenefits,
+        benefitType,
         selectedServices,
         source: 'home_apply_section'
       };
@@ -155,6 +166,8 @@ const Home = () => {
         setAddressLine1('');
         setCity('');
         setSelectedServices([]);
+        setOnBenefits('');
+        setBenefitType('');
       } else {
         toast({ title: '❌ Submission failed', description: 'Please try again in a moment.' });
       }
@@ -207,17 +220,92 @@ const Home = () => {
             <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
                 <label className="block text-sm font-semibold text-gray-800 mb-3">Ownership</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 mb-4">
                   {['Owner Occupier','Private Tenant'].map(opt => (
-                    <button key={opt} onClick={() => setOwnership(opt)} className={`w-full px-4 py-3 rounded-xl border text-sm md:text-base ${ownership===opt ? 'bg-[#248E3D] text-white border-[#248E3D]' : 'border-gray-300 hover:border-[#248E3D]'}`}>{opt}</button>
+                    <button
+                      key={opt}
+                      onClick={() => setOwnership(opt)}
+                      className={`w-full px-4 py-3 rounded-xl border text-sm md:text-base ${
+                        ownership===opt ? 'bg-[#248E3D] text-white border-[#248E3D]' : 'border-gray-300 hover:border-[#248E3D]'
+                      }`}
+                    >
+                      {opt}
+                    </button>
                   ))}
+                </div>
+
+                <div className="mt-2">
+                  <p className="block text-sm font-semibold text-gray-800 mb-3">
+                    Are you or anyone in your household in receipt of benefits?
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {['Yes', 'No'].map(opt => (
+                      <button
+                        key={opt}
+                        onClick={() => setOnBenefits(opt)}
+                        className={`w-full px-3 py-2 rounded-xl border text-sm md:text-base ${
+                          onBenefits===opt ? 'bg-[#248E3D] text-white border-[#248E3D]' : 'border-gray-300 hover:border-[#248E3D]'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+
+                  {onBenefits === 'Yes' && (
+                    <div className="mt-2">
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">
+                        Which benefit do you receive?
+                      </label>
+                      <select
+                        value={benefitType}
+                        onChange={(e) => setBenefitType(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#248E3D] text-sm md:text-base"
+                      >
+                        <option value="">Select a benefit</option>
+                        <option value="Child Benefit (thresholds apply)">Child Benefit (thresholds apply)</option>
+                        <option value="Child Tax Credit (CTC)">Child Tax Credit (CTC)</option>
+                        <option value="Housing Benefit">Housing Benefit</option>
+                        <option value="Income based Jobseekers Allowance (JSA)">Income based Jobseekers Allowance (JSA)</option>
+                        <option value="Income related Employment and Support Allowance (ESA)">Income related Employment and Support Allowance (ESA)</option>
+                        <option value="Income Support (IS)">Income Support (IS)</option>
+                        <option value="Pension Credit Guarantee Credit (PCGC)">Pension Credit Guarantee Credit (PCGC)</option>
+                        <option value="Pension Credit Savings Credit (PCSC)">Pension Credit Savings Credit (PCSC)</option>
+                        <option value="Universal Credit (UC)">Universal Credit (UC)</option>
+                        <option value="Working Tax Credit (WTC)">Working Tax Credit (WTC)</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
                 <label className="block text-sm font-semibold text-gray-800 mb-3">Current heating</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {['Gas Boiler','Electric','Oil / LPG','Heat Pump','Solid Fuel','Storage Heaters'].map(opt => (
-                    <button key={opt} onClick={() => setHeating(opt)} className={`w-full px-4 py-3 rounded-xl border text-sm md:text-base ${heating===opt ? 'bg-[#248E3D] text-white border-[#248E3D]' : 'border-gray-300 hover:border-[#248E3D]'}`}>{opt}</button>
+                  {(heatingOptions.length > 0
+                    ? heatingOptions
+                    : [
+                        { name: 'Gas Boiler' },
+                        { name: 'Electric' },
+                        { name: 'Oil / LPG' },
+                        { name: 'Oil/LPG' },
+                        { name: 'Heat Pump' },
+                        { name: 'Solid Fuel' },
+                        { name: 'Storage Heaters' },
+                        { name: 'Boiler Service' }
+                      ]
+                  ).map((opt) => (
+                    <button
+                      key={opt.id || opt.name}
+                      onClick={() => handleSelectHeating(opt)}
+                      className={`w-full px-4 py-3 rounded-xl border text-sm md:text-base ${
+                        heating === opt.name
+                          ? 'bg-[#248E3D] text-white border-[#248E3D]'
+                          : 'border-gray-300 hover:border-[#248E3D]'
+                      }`}
+                    >
+                      {opt.name}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -270,31 +358,6 @@ const Home = () => {
                   </div>
                 </div>
               </div>
-              {services.length > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">Which services are you interested in?</label>
-                  <div className="grid md:grid-cols-3 gap-2">
-                    {services.map((service) => {
-                      const isSelected = !!selectedServices.find((s) => s.id === service.id);
-                      return (
-                        <button
-                          key={service.id}
-                          type="button"
-                          onClick={() => toggleServiceSelection(service)}
-                          className={`w-full px-4 py-3 rounded-xl border text-sm md:text-base ${
-                            isSelected ? 'bg-[#248E3D] text-white border-[#248E3D]' : 'border-gray-300 hover:border-[#248E3D]'
-                          }`}
-                        >
-                          <span className="block">{service.name}</span>
-                          {typeof service.price !== 'undefined' && (
-                            <span className="block text-xs opacity-80">£{service.price}</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
             <div className="flex justify-between max-w-2xl mx-auto mt-6">
               <button onClick={() => setStep(2)} className="px-6 py-3 rounded-xl bg-gray-200 text-gray-800">Back</button>
