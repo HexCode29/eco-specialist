@@ -116,6 +116,11 @@ const Home = () => {
       (onBenefits === 'No' || benefitType !== '');
     const canNextFrom3 = propertyType !== '' && boilerAge !== '' && epc !== '';
 
+    const getDisplayName = (name) => {
+      // Remove "Service" from "Boiler Service" for display only
+      return name === 'Boiler Service' ? 'Boiler' : name;
+    };
+
     const handleSelectHeating = (serviceLike) => {
       // serviceLike may be a Firestore service or a simple fallback object
       setHeating(serviceLike.name);
@@ -304,7 +309,7 @@ const Home = () => {
                           : 'border-gray-300 hover:border-[#248E3D]'
                       }`}
                     >
-                      {opt.name}
+                      {getDisplayName(opt.name)}
                     </button>
                   ))}
                 </div>
