@@ -470,34 +470,36 @@ const Home = () => {
         <meta name="description" content="Get up to £10,000 in government grants for energy efficiency improvements. Expert advice on ECO Specialist, Boiler Upgrade Scheme, and Green Homes Grant in Birmingham." />
       </Helmet>
 
-      {/* Hero Section (White background, no slideshow) */}
-      <section className="relative h-[89vh] flex items-center bg-white">
-        <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-b from-transparent to-gray-100 pointer-events-none"></div>
-        <div className="relative z-10 container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center max-w-4xl mx-auto"
-          >
-            <span className="text-[#4caf50] font-bold tracking-widest uppercase">{hero.subtitle}</span>
-            <h1 className="text-4xl md:text-6xl font-bold my-4 leading-tight text-gray-900">
-              {hero.title}
+      {/* Hero Section with Form */}
+      <section id="apply" className="relative py-8 md:py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col items-center">
+            {/* Hero Text - Top */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-8 max-w-3xl"
+            >
+              <span className="text-[#4caf50] font-bold tracking-widest uppercase text-xs md:text-sm">{hero.subtitle}</span>
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold my-3 leading-tight text-gray-900">
+                {hero.title}
               </h1>
-            <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-              {hero.description}
+              <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
+                {hero.description}
               </p>
-              <Link
-              to="/#apply"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-                className="inline-block bg-[#248E3D] text-white font-bold py-3 px-8 rounded-xl hover:bg-[#1e6b32] transition-colors"
-              >
-              {hero.buttonText}
-              </Link>
-          </motion.div>
+            </motion.div>
+
+            {/* Eligibility Form - Center */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="w-full max-w-5xl"
+            >
+              <StepperForm />
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -719,26 +721,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Application Section - 4 Step Form */}
-      <section id="apply" className="section-padding bg-white">
-        <div className="container mx-auto px-4">
-          <motion.div
-            className="max-w-4xl mx-auto text-center mb-10"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <p className="font-bold text-[#248E3D] uppercase tracking-wider text-sm mb-3">Start here</p>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">Check Your Eligibility</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Answer a few quick questions to see if you qualify for fully funded home upgrades under the ECO scheme. It takes less than 2 minutes.
-            </p>
-          </motion.div>
-
-          <StepperForm />
-        </div>
-      </section>
     </>
   );
 };
